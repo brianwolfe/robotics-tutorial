@@ -12,5 +12,9 @@ db = SQLAlchemy(app)
 def index():
     return render_template('index.html')
 
+@app.route('/static/<path:filename>')
+def get_static_assets(filename):
+    return send_from_directory('/static/', filename)
+
 if __name__ == '__main__':
     app.run()

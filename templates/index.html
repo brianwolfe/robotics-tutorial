@@ -1,27 +1,38 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html class="no-js" lang="en">
   <head>
-    <title>Wordcount</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      .container {
-        max-width: 1000px;
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Filter Tutorials</title>
+    <link rel="stylesheet" href="{{config.APP_STYLESHEET_URL}}" />
+    <script src="{{MODERNIZR_URL}}"></script>
   </head>
   <body>
-    <div>
-      <h1>Wordcount 3000</h1>
-      <form role="form" method='POST' action='/'>
-        <div class="form-group">
-          <input type="text" name="url" class="form-control" id="url-box" placeholder="Enter URL..." style="max-width: 300px;">
-        </div>
-        <button type="submit" class="btn btn-default">Submit</button>
-      </form>
-      <br>
-      {% for error in errors %}
-        <h4>{{ error }}</h4>
-      {% endfor %}
+    <div class="row">
+      <div class="large-12 columns">
+        <h1>Welcome to Brian's Tutorials</h1>
+      </div>
     </div>
+    
+    <div class="row">
+      <div class="large-12 columns">
+        <div class="panel">
+          <h3>Here are my tutorials based on Probabilistic Robotics</h3>
+          <p>I highly recommend you look at the the <a href="https://www.udacity.com/course/cs373">Udacity class by Sebastian Thrun</a>. The free videos are very helpful in explaining the concepts and go through implementations of many of the filters</p>
+          <p>All the code for this website is available on Github and I appreciate pull requests.</p>
+
+          <ul>
+            <li><a href='tutorials/kalman_tutorial.html'>Kalman Filter</a></li>
+            <li><a href='tutorials/extended_kalman.html'>Extended Kalman Filter</a></li>
+            <li><a href='tutorials/unscented_kalman.html'>Unscented Kalman Filter</a></li>
+            <li><a href='tutorials/if_tutorial.html'>Information Filter</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{config.JQUERY_URL}}"></script>
+    <script src="{{config.FOUNDATION_URL}}"></script>
+    <script src="{{config.APP_URL}}"></script>
   </body>
 </html>
