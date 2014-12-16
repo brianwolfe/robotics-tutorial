@@ -28,10 +28,27 @@ class Config(object):
     APP_STYLESHEET_URL = '/'.join([STATIC_URL, 'stylesheets', 'app.css'])
 
 class ProductionConfig(Config):
+    D3_URL = \
+        "http://cdnjs.cloudflare.com/ajax/libs/d3/3.5.2/d3.min.js"
+    FOUNDATION_URL = \
+        "http://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.0/js/foundation.min.js"
+    JQUERY_URL  = \
+        "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"
+    HANDLEBARS_URL  = \
+        "http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"
+    MODERNIZR_URL  = \
+        "http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"
+    UNDERSCORE_URL  = \
+        "http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"
+    NVD3_URL  = \
+        "http://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.min.js"
+    MATHJAX_URL  = \
+        "http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.4.0/MathJax.js"
     DEBUG = False
 
 
-class StagingConfig(Config):
+# Inherits from ProductionConfig so the least amount changes.
+class StagingConfig(ProductionConfig):
     DEVELOPMENT = True
 
 
