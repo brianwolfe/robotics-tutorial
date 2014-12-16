@@ -1,0 +1,325 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Filter Tutorials: Information Filter</title>
+    <link rel="stylesheet" href="/stylesheets/app.css" />
+    <link rel="stylesheet" href="/bower_components/nvd3/nv.d3.css" />
+    <script src="/bower_components/modernizr/modernizr.js"></script>
+  </head>
+  <body>
+    <div class="row">
+      <div class="large-9 columns push-3">
+        <h1>Information Filter Tutorial</h1>
+      </div>
+    </div>
+    <div class='row'>
+      <div class='large-1 columns'>
+      </div>
+      <div class='large-10 columns'>
+        <h2>1-D example</h2>
+        <p>
+          Consider the cart example from the kalman filter tutorial. In this case,
+          we looked at a cart that had encoders and a range sensor to a target at
+          position $d = 0$. We will parallel the presentation of the Kalman filter
+          here. First, we note that the distribution that we are trying to represent
+          is exactly the same, we are merely going to represent it and store it
+          differently. Instead of using the mean and covariance to characterize the
+          probability distribution, we will use the information vector $\xi$
+          and the information matrix $\Omega$. These are defined as
+          \[\xi_t = \Sigma_t^{-1} \mu\]
+          \[\Omega_t = \Sigma_t^{-1}\]
+        </p>
+        Starting from the same position, we will consider an initial
+        distribution with a mean of 40 meters and a standard deviation
+        of 4 meters. In general, the
+        information matrix is the inverse of the covariance matrix.
+        In a single dimension, this is just the scalar inverse of
+        the covariance. Thus the information matrix is
+        \[\Omega_0 = \left[\frac{1}{16}\right],\]
+        and the information vector is
+        \[\xi_0 = \left[\frac{1}{16}\right] \left[40\right] = \left[\frac{5}{2}\right]\]
+        To give a more concrete example, we show the mean, covariance,
+        information vector, and information matrix to allow a
+        side-by-side comparison. Hit the move buttons and change
+        the covariance of the state update noise to see the effect
+        on the information.
+        </p>
+        <div id="information_interface">
+        </div>
+        <p>
+        The more spread out the distribution, the smaller the
+        corresponding entry in the information matrix.
+        </p>
+        <p>
+        As in the Kalman filter, we need to include measurements
+        which refine the estimate of the cart's position. In the Kalman
+        filter, each measurement reduced the covariance and moved the
+        mean by an amount that varied depending on the relative
+        size of the inverse of the covariances. In the information filter,
+        each measurement increases the information, so the information
+        matrix entry will corresondingly increase. The information vector
+        is a location parameter, like the mean, but it is scaled with
+        respect to the information vector instead of the more familiar
+        mean value.
+        </p>
+        <p>
+        The information, like the Kalman filter, has a state update step
+        and a measurement step. These are similar in spirit, but
+        are nearly the inverse of their corresponding steps in the Kalman filter.
+        This is precisely the dual property stated earlier:
+        \[\bar{\Omega}_t = (A_t \Omega^{-1} A^T_t + R_t)^{-1}\]
+        \[\bar{\xi}_t = \bar \Omega_t (A_t \Omega^{-1} \xi_{t-1} + B_t u_t)\]
+        \[\Omega_t = C^T_t Q^{-1}_t C_t + \bar \Omega_t\]
+        \[\xi_t = C^T_t Q^{-1} z_t + \xi_t\]
+        Compare these to the Kalman filter equations:
+        \[\bar{\Sigma}_t = A_t \Sigma_{t-1} A_t + R_t\]
+        \[\bar{\mu}_t = A_t \mu_{t-1} + B_t u_t\]
+        \[K = \bar \Sigma_t C_t^T (C_t \bar \Sigma_t C_t^T + Q_t)^{-1}\]
+        \[\mu = \bar \mu_t + K_t (z_t - C_t \bar \mu_t)\]
+        \[\Sigma_t = (I - K_t C_t) \bar \Sigma_t \]
+        </p>
+        <p>
+        The measurement step of the information filter is nearly equivalent
+        to the prediction step in the Kalman filter. The prediction step
+        of the information filter does not show the same symmetry. This is
+        because it is written as a conversion to state space and back to
+        information space. Consider,
+        \[\bar{\Omega}_t = (A_t \Omega^{-1}_{t-1} A^T_t + R_t)^{-1} = (A_t \Sigma_{t-1} A^T_t + R_t)^{-1}\]
+        which is exactly the Kalman filter covariance prediction step with
+        extra inversions because we are storing the information matrix.
+        Similarly:
+        \[\bar{\xi}_t = \bar \Omega_t (A_t \Omega^{-1}_{t-1} \xi_{t-1} + B_t u_t) = \bar \Sigma_t^{-1} \left[(\Sigma_{t-1} (\Sigma^{-1}_{t-1} \mu_{t-1}) + B_t u_t\right] = \bar \Sigma_t^{-1} \left[\mu_{t-1} + B_t u_t\right] \]
+        which is the product of $\bar \Sigma_{t}^{-1}$ with the updated mean
+        from the Kalman filter.
+        </p>
+        <p>
+        <!--
+        An equivalent prediction step for the Information Filter would
+        be to take:
+        \[\Omega^*_t = (A^{-1}_t)^T \Omega_{t-1} A^{-1}_t\]
+        \[K^*_t = \Omega^*_t (\Omega^*_{t} + R^{-1}_t)^{-1}\]
+        \[\bar \Omega_t = (I - K^*_t) \Omega^*_t (I - K^*_t)^T + K^*_t R^{-1}_t (K^*_t)^T\]
+        \[\bar xi_t = (I - K^*_t) A^{-1}_t \xi_{t-1} \]
+        </p>
+        This version performs the update purely in state space and contains
+        some similar structure to the measurement update in the Kalman filter.
+        -->
+        </p>
+        <p>
+        In general, there are two reasons the information filter can be
+        valuable. First, if the number of measurement types greatly exceeds
+        the size of the state space, the information matrix only inverts
+        a matrix of the same size as the state space, not the measurement
+        space. Secondly, if the state space is very large, but maintains
+        some structure, the information filter is more likely to maintain
+        sparseness (most entries being zero), whereas the covariance
+        matrix typically ends up being dense (most entries become nonzero).
+        We will (hopefully) see this below, when we consider a model of the
+        cart without the encoders.
+        </p>
+        <h2>2-D example</h2>
+        <p>
+        In this section, we will consider the same cart, but now we will
+        remove the encoders and consider a control signal in the form of an
+        actuator force from the motor. Our state variables will now track
+        both the position $d$ and the velocity $v$. These will be updated
+        using the same range sensor as in the previous discussion. What we
+        will be interested in, is the structure of the information matrix
+        compared to the covariance matrix for various times and conditions.
+        </p>
+        <p>
+        The illustration below allows you to modify the
+        mean, covariance, information vector, information
+        matrix, movement covariance, and measurement covariances.
+        Click the push left, push right, and propagate buttons
+        to perform movement update steps. Click the graph to
+        perform simulate a measurement (and measurement update)
+        at that location. Play around with these update steps
+        to get an intuition for how the updates work.
+        </p>
+        <p>
+        </p>
+        <div id="twod">
+        </div>
+      </div>
+      <div class='large-1 columns'>
+      </div>
+    </div>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX","output/HTML-CSS"],
+        tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+      });
+    </script>
+
+    <script id="vector-partial" type="text/x-handlebars-template">
+        <div class="small-3 columns">
+          <table class="matrix">
+            <tr>
+              <td><input class="mat_0_0" type="number" value=5></td>
+            </tr>
+            <tr>
+              <td><input class="mat_1_0" type="number" value=0></td>
+            </tr>
+          </table>
+        </div>
+    </script>
+
+    <script id="matrix-partial" type="text/x-handlebars-template">
+        <div class="small-5 columns">
+          <table class="matrix">
+            <tr>
+              <td><input class="mat_0_0" type="number" value=5></td>
+              <td><input class="mat_0_1" type="number" value=0></td>
+            </tr>
+            <tr>
+              <td><input class="mat_1_0" type="number" value=0></td>
+              <td><input class="mat_1_1" type="number" value=5></td>
+            </tr>
+          </table>
+        </div>
+    </script>
+
+    <script id="mat11-partial" type="text/x-handlebars-template">
+        <div class="small-3 columns">
+          <table class="matrix">
+            <tr>
+              <td><input class="mat_0_0" type="number" value=5></td>
+            </tr>
+          </table>
+        </div>
+    </script>
+
+    <script id="twod_template" type="text/x-handlebars-template">
+        <div class="row buttonrow">
+          <a class="button radius leftshift">Push left</a>
+          <a class="button radius continue">Propagate</a>
+          <a class="button radius rightshift">Push right</a>
+          <a class="button radius secondary reset">Reset</a>
+        </div>
+
+        <svg class="graph">
+        </svg>
+        <div class="row">
+          <div class="small-2 columns">
+            <label class="inline"> Mean </label>
+          </div>
+          <div class="mean">
+          {{> vector}}
+          </div>
+          <div class="small-2 columns">
+            <label class="inline"> Covariance </label>
+          </div>
+          <div class="covariance">
+          {{> matrix}}
+          </div>
+        </div>
+        <div class="row">
+          <div class="small-2 columns">
+            <label class="inline"> Information vector </label>
+          </div>
+          <div class="ivec">
+          {{> vector}}
+          </div>
+          <div class="small-2 columns">
+            <label class="inline"> Information matrix</label>
+          </div>
+          <div class="imat">
+          {{> matrix}}
+          </div>
+        </div>
+        <div class="row">
+          <div class="small-2 columns">
+            <label class="inline"> Movement Covariance </label>
+          </div>
+          <div class="movementnoise">
+          {{> matrix}}
+          </div>
+          <div class="small-2 columns">
+            <label class="inline"> Measurement Covariance</label>
+          </div>
+          <div class="measurementnoise">
+          {{> mat11}}
+          </div>
+        </div>
+    </script>
+
+    <script id="graph_template" type="text/x-handlebars-template">
+{{#if movement_buttons}}
+        <div class="row buttonrow">
+          <a class="button radius leftshift">Move left</a>
+          <a class="button radius rightshift">Move right</a>
+          <a class="button radius secondary reset">Reset</a>
+        </div>
+{{/if}}
+{{#if noise_selection}}
+        <div class="row">
+          <div class="small-3 columns">
+            <label class="right inline"> Noise STD </label>
+          </div>
+          <div class="small-2 columns">
+            <input type="number" class="noise" value="1" min=0>
+          </div>
+          <div class="small-1 columns">
+          </div>
+        </div>
+{{/if}}
+<svg class="graph">
+</svg>
+      <div class="row">
+{{#if mu_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Mean </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="mean" type="number" value=1>
+        </div>
+{{/if}}
+{{#if sigma_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Covariance </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="covariance" type="number" value=1>
+        </div>
+        <div class="small-2 columns">
+        </div>
+{{/if}}
+      </div>
+      <div class="row">
+{{#if invec_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Information vector </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="information_vec" type="number" value=1>
+        </div>
+{{/if}}
+{{#if inmat_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Information matrix </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="information_mat" type="number" value=1>
+        </div>
+        <div class="small-2 columns">
+        </div>
+{{/if}}
+      </div>
+    </script>
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/foundation/js/foundation.min.js"></script>
+    <script src="/bower_components/MathJax/MathJax.js"></script>
+    <script src="/bower_components/d3/d3.js"></script>
+    <script src="/bower_components/nvd3/nv.d3.js"></script>
+    <script src="/bower_components/underscore/underscore-min.js"></script>
+    <script src="/bower_components/handlebars/handlebars.js"></script>
+    <script src="/js/filter_plotting.js"></script>
+    <script src="/js/if_tutorial.js"></script>
+    <script src="/js/app.js"></script>
+  </body>
+</html>
