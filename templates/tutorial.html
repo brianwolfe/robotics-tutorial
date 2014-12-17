@@ -11,6 +11,171 @@
 
   <body>
   {{body | safe}}
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX","output/HTML-CSS"],
+        tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+      });
+    </script>
+
+    {% raw %}
+    <script id="vector-partial" type="text/x-handlebars-template">
+        <div class="small-3 columns">
+          <table class="matrix">
+            <tr>
+              <td><input class="mat_0_0" type="number" value=5></td>
+            </tr>
+            <tr>
+              <td><input class="mat_1_0" type="number" value=0></td>
+            </tr>
+          </table>
+        </div>
+    </script>
+
+    <script id="matrix-partial" type="text/x-handlebars-template">
+        <div class="small-5 columns">
+          <table class="matrix">
+            <tr>
+              <td><input class="mat_0_0" type="number" value=5></td>
+              <td><input class="mat_0_1" type="number" value=0></td>
+            </tr>
+            <tr>
+              <td><input class="mat_1_0" type="number" value=0></td>
+              <td><input class="mat_1_1" type="number" value=5></td>
+            </tr>
+          </table>
+        </div>
+    </script>
+
+    <script id="mat11-partial" type="text/x-handlebars-template">
+        <div class="small-3 columns">
+          <table class="matrix">
+            <tr>
+              <td><input class="mat_0_0" type="number" value=5></td>
+            </tr>
+          </table>
+        </div>
+    </script>
+
+    <script id="twod_template" type="text/x-handlebars-template">
+        <div class="row buttonrow">
+          <a class="button radius leftshift">Push left</a>
+          <a class="button radius continue">Propagate</a>
+          <a class="button radius rightshift">Push right</a>
+          <a class="button radius secondary reset">Reset</a>
+        </div>
+
+        <svg class="graph">
+        </svg>
+        <div class="row">
+          <div class="small-2 columns">
+            <label class="inline"> Mean </label>
+          </div>
+          <div class="mean">
+          {{> vector}}
+          </div>
+          <div class="small-2 columns">
+            <label class="inline"> Covariance </label>
+          </div>
+          <div class="covariance">
+          {{> matrix}}
+          </div>
+        </div>
+        <div class="row">
+          <div class="small-2 columns">
+            <label class="inline"> Information vector </label>
+          </div>
+          <div class="ivec">
+          {{> vector}}
+          </div>
+          <div class="small-2 columns">
+            <label class="inline"> Information matrix</label>
+          </div>
+          <div class="imat">
+          {{> matrix}}
+          </div>
+        </div>
+        <div class="row">
+          <div class="small-2 columns">
+            <label class="inline"> Movement Covariance </label>
+          </div>
+          <div class="movementnoise">
+          {{> matrix}}
+          </div>
+          <div class="small-2 columns">
+            <label class="inline"> Measurement Covariance</label>
+          </div>
+          <div class="measurementnoise">
+          {{> mat11}}
+          </div>
+        </div>
+    </script>
+
+    <script id="graph_template" type="text/x-handlebars-template">
+{{#if movement_buttons}}
+        <div class="row buttonrow">
+          <a class="button radius leftshift">Move left</a>
+          <a class="button radius rightshift">Move right</a>
+          <a class="button radius secondary reset">Reset</a>
+        </div>
+{{/if}}
+{{#if noise_selection}}
+        <div class="row">
+          <div class="small-3 columns">
+            <label class="right inline"> Noise STD </label>
+          </div>
+          <div class="small-2 columns">
+            <input type="number" class="noise" value="1" min=0>
+          </div>
+          <div class="small-1 columns">
+          </div>
+        </div>
+{{/if}}
+<svg class="graph">
+</svg>
+      <div class="row">
+{{#if mu_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Mean </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="mean" type="number" value=1>
+        </div>
+{{/if}}
+{{#if sigma_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Covariance </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="covariance" type="number" value=1>
+        </div>
+        <div class="small-2 columns">
+        </div>
+{{/if}}
+      </div>
+      <div class="row">
+{{#if invec_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Information vector </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="information_vec" type="number" value=1>
+        </div>
+{{/if}}
+{{#if inmat_setting}}
+        <div class="small-3 columns">
+          <label class="right inline"> Information matrix </label>
+        </div>
+        <div class="small-2 columns">
+          <input class="information_mat" type="number" value=1>
+        </div>
+        <div class="small-2 columns">
+        </div>
+{{/if}}
+      </div>
+    </script>
+    {% endraw %}
     <script src="{{config.JQUERY_URL}}"></script>
     <script src="{{config.FOUNDATION_URL}}"></script>
     <script src="{{config.MATHJAX_URL}}"></script>
