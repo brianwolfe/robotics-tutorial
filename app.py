@@ -37,8 +37,8 @@ def index():
 
 @app.route('/tutorial/<path:tutorial>', methods=['GET'])
 def tutorial(tutorial):
-    if app.config['DEBUG']:
-        load_tutorials()
+    # if app.config['DEBUG']:
+    load_tutorials()
     print("Rendering: ", tutorial)
     print("Pages: ", list(tutorial_pages.keys()))
     if tutorial in tutorial_pages:
