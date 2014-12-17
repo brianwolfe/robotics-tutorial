@@ -525,6 +525,121 @@ filter_plotting = function() {
     }
   }
 
+
+  /* Nonlinear comparison stuff */
+  fp.nonlinear_comparison = function() {
+    var xrange = [-20, 20],
+      yrange = [-20, 20],
+      chart = function(selection) {
+        var data = selection.datum(),
+          original_data = data,
+          svg = selection.select('svg');
+        svg.classed("graphcontainer", true);
+        svg.attr('height', 300);
+        svg.attr('width', 720);
+
+        var height = parseInt(svg.attr('height')),
+          width = parseInt(svg.attr('width')),
+          rpad = 20,
+          tpad = 20,
+          lpad = 70,
+          bpad = 70,
+          lloc = lpad,
+          rloc = width - rpad,
+          bloc = height - bpad,
+          tloc = tpad,
+          lax_pos = lloc - 60,
+          bax_pos = bloc + 50,
+          midx = (rloc + lloc) / 2,
+          midy = (bloc + tloc) / 2,
+          xscale = d3.scale.linear()
+            .domain(xrange)
+            .range([lloc, rloc])
+            .nice(),
+          yscale = d3.scale.linear()
+            .domain(yrange)
+            .range([bloc, tloc])
+            .nice(),
+          xAxis = svg.selectAll('.xaxis')
+            .data([xscale]),
+          yAxis = svg.selectAll('.yaxis')
+            .data([yscale]),
+          enter = xAxis.enter()
+            .append("g");
+        enter.append("g").classed('axis', true);
+        enter.append("g").classed('axislabel', true);
+
+        xAxis.classed('xaxis', true)
+            .select(".axis")
+              .attr("transform", "translate(0, " + bloc + ")")
+              .call(d3.svg.axis().scale(xscale).orient("bottom"))
+        xAxis.select('.axislabel')
+            .attr("transform", 
+                 "translate(" + midx + "," + (bax_pos) + ")")
+            .html("<text> Robot X Position </text>");
+
+        enter = yAxis.enter()
+            .append("g");
+        enter.append("g").classed('axis', true);
+        enter.append("g").classed('axislabel', true);
+        yAxis.classed('yaxis', true)
+            .select(".axis")
+              .attr("transform", "translate(" + lloc + ",0)")
+              .call(d3.svg.axis().scale(yscale).orient("left"))
+        yAxis.select('.axislabel')
+            .attr("transform", 
+                 " rotate(90, " + (lax_pos) + ", " + midy + ") translate(" + (lax_pos) + "," + (midy) + ")")
+            .html("<text> Robot Y Position </text>");
+        xAxis.classed('yaxis', true);
+
+
+        var mapsigma = function(sigma) {
+          var xs = xscale(0),
+            ys = yscale(0),
+            ms = [[xscale(xscale(sigma[0][0]) - xs) - xs,
+                   yscale(xscale(sigma[0][1]) - xs) - ys],
+                  [yscale(xscale(sigma[0][1]) - xs) - ys,
+                   yscale(yscale(sigma[1][1]) - ys) - ys]];
+          return ms;
+
+        }
+
+        var display = function() {
+          ellipses = svg.selectAll('.sigma')
+            .data(data);
+
+          ellipses.enter()
+            .append('g').classed('sigma', true)
+              .append('ellipse')
+                .classed('sigmaellipse', true)
+                .attr('style', 'stroke:' + fp.colorwheel[1]);
+
+          ellipses.transition(100)
+            .attr("transform",
+                  function (x) {
+                    var tstr = "translate(" + xscale(x.mu[0]) + "," + yscale(x.mu[1]) + ") ";
+                    var ev = fp.eigvecs2x2(mapsigma(x.sigma));
+                    var rot = Math.atan2(ev[0][1], ev[0][0]) * 180/Math.PI;
+                    var rstr = "rotate(" + rot + ") "
+                    return tstr + rstr;
+                  });
+          ellipses.select('ellipse').transition(100)
+            .attr('cx', 0)
+            .attr('cy', 0)
+            .attr('rx', function(x) {
+              return Math.sqrt(fp.eigvals2x2(mapsigma(x.sigma))[0]);
+            })
+            .attr('ry', function(x) {
+              return Math.sqrt(fp.eigvals2x2(mapsigma(x.sigma))[1]);
+            })
+            .attr('style', function(x, i) {
+              return 'stroke:' + fp.colorwheel[(i + 1) % fp.colorwheel.length];
+            })
+        }
+      }
+      ;
+  }
+
   return fp;
 }();
 
