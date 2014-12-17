@@ -1,0 +1,12 @@
+{
+  "name": "foundation-compass-app",
+  "version": "0.0.1",
+  "private": "true",
+  "dependencies": {
+    "foundation": "zurb/bower-foundation",
+    "MathJax": "~2.4.0",
+    "nvd3": "~1.1.15-beta",
+    "underscore": "~1.7.0",
+    "handlebars": "~2.0.0"
+  }
+}
