@@ -63,6 +63,14 @@ svg {
     text-anchor: middle;
 }
 
+.sigmaline {
+    stroke-width: 2px;
+}
+
+.sigmaline.mean_theta {
+    stroke-width: 3px;
+}
+
 .sigmaellipse {
     fill:none;
     stroke-width: 2px;
@@ -77,6 +85,11 @@ svg {
     border-radius: 30px;
     margin-left: auto;
     margin-right: auto;
+}
+
+.graphcontainer.square {
+    width: 500px;
+    height:500px;
 }
 
 .indicator {

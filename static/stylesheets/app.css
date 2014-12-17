@@ -9086,12 +9086,22 @@ svg {
 }
 
 /* line 66, ../scss/app.scss */
+.sigmaline {
+  stroke-width: 2px;
+}
+
+/* line 70, ../scss/app.scss */
+.sigmaline.mean_theta {
+  stroke-width: 3px;
+}
+
+/* line 74, ../scss/app.scss */
 .sigmaellipse {
   fill: none;
   stroke-width: 2px;
 }
 
-/* line 71, ../scss/app.scss */
+/* line 79, ../scss/app.scss */
 .graphcontainer {
   background-color: #FAFAFA;
   width: 720px;
@@ -9101,7 +9111,13 @@ svg {
   margin-right: auto;
 }
 
-/* line 82, ../scss/app.scss */
+/* line 90, ../scss/app.scss */
+.graphcontainer.square {
+  width: 500px;
+  height: 500px;
+}
+
+/* line 95, ../scss/app.scss */
 .indicator {
   stroke-width: 2px;
   stroke: black;

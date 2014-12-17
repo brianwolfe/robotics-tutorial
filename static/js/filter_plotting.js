@@ -540,9 +540,12 @@ filter_plotting = function() {
         var data = selection.datum(),
           original_data = data,
           svg = selection.select('svg');
+        selection.classed("graphcontainer", true);
+        selection.classed("square", true);
         svg.classed("graphcontainer", true);
-        svg.attr('height', 300);
-        svg.attr('width', 720);
+        svg.classed("square", true);
+        svg.attr('height', 500);
+        svg.attr('width', 500);
 
         var height = parseInt(svg.attr('height')),
           width = parseInt(svg.attr('width')),
@@ -630,6 +633,15 @@ filter_plotting = function() {
                 .attr('style', 'stroke:' + fp.colorwheel[1]);
           new_g.append('line')
                 .classed('mean_theta', true)
+                .classed('sigmaline', true)
+                .attr('style', 'stroke:' + fp.colorwheel[1]);
+          new_g.append('line')
+                .classed('plussigma', true)
+                .classed('sigmaline', true)
+                .attr('style', 'stroke:' + fp.colorwheel[1]);
+          new_g.append('line')
+                .classed('minussigma', true)
+                .classed('sigmaline', true)
                 .attr('style', 'stroke:' + fp.colorwheel[1]);
 
           ellipses.transition(100)
@@ -655,22 +667,96 @@ filter_plotting = function() {
             .attr('style', function(x, i) {
               return 'stroke:' + fp.colorwheel[(i + 1) % fp.colorwheel.length];
             });
-          ellipses.select('line').transition(100)
+          // ellipses.select('.plussigma').transition(100)
+          //   .attr('x1', 0)
+          //   .attr('y1', 0)
+          //   .attr('x2', function(x) {
+          //     var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
+          //       phi = x.mu[2] + Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
+          //       phix = Math.cos(phi) * rx;
+          //       return phix;
+          //   })
+          //   .attr('y2', function(x) {
+          //     var ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]),
+          //       phi = x.mu[2] + Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
+          //       phiy = Math.sin(phi) * ry;
+          //       return phiy;
+          //   });
+          // ellipses.select('.minussigma').transition(100)
+          //   .attr('x1', 0)
+          //   .attr('y1', 0)
+          //   .attr('x2', function(x) {
+          //     var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
+          //       phi = x.mu[2] - Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
+          //       phix = Math.cos(phi) * rx;
+          //       return phix;
+          //   })
+          //   .attr('y2', function(x) {
+          //     var ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]),
+          //       phi = x.mu[2] - Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
+          //       phiy = Math.sin(phi) * ry;
+          //       return phiy;
+          //   });
+          var map_theta = function(theta) {
+            return -theta;
+          }
+          ellipses.select('.mean_theta').transition(100)
             .attr('x1', 0)
             .attr('y1', 0)
             .attr('x2', function(x) {
               var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
-                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]);
-                return rx;
+                phi = map_theta(x.mu[2] - (x.rotation * Math.PI / 180)),
+                phix = Math.cos(phi) * rx;
+                console.log(phi);
+                return phix;
             })
             .attr('y2', function(x) {
-              var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
-                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]);
-                return ry;
+              var ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]),
+                phi = map_theta(x.mu[2] - (x.rotation * Math.PI / 180)),
+                phiy = Math.sin(phi) * ry;
+                return phiy;
             });
+
         };
 
         display();
+
+
+        var movement_update = function(leftm, rightm) {
+          var alldata = {
+            robots: data,
+            leftwheel: leftm,
+            rightwheel: rightm
+          }
+
+          d3.json("/robotupdate/ukf")
+            .header("Content-Type", "application/json")
+            .post(JSON.stringify(alldata), function(error, curdata) {
+              if (error) {
+                return;
+              }
+              console.log(data);
+              data = curdata.robots;
+              console.log(data);
+              display();
+              
+            });
+        }
+
+        var movebutton = selection.select('.movebutton'),
+          leftmove = selection.select('.leftwheel'),
+          rightmove = selection.select('.rightwheel');
+        console.log(movebutton);
+          // Update button events
+        selection.select('.movebutton').on('click', function() {
+            var leftm = leftmove.property('value'),
+              rightm = rightmove.property('value');
+            console.log("Clicked");
+            movement_update(leftm, rightm);
+            display();
+          });
+
+
       };
       return chart;
   }
