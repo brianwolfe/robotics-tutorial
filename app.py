@@ -8,18 +8,22 @@ app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 db = SQLAlchemy(app)
 
-
 tutorial_path = 'tutorials'
-tutorials = os.listdir(tutorial_path)
-
+tutorials = []
 tutorial_pages = {}
-for tutorial in tutorials:
-    # cut off .html
-    if tutorial[-5:] == '.html':
-        print("loading tutorial: ", tutorial)
-        tutorial_name = tutorial[:-5]
-        tutorial_pages[tutorial_name] = \
-                open(join(tutorial_path, tutorial)).read()
+
+def load_tutorials():
+    global tutorials
+    global tutorial_pages
+    tutorials = os.listdir(tutorial_path)
+    tutorial_pages = {}
+    for tutorial in tutorials:
+        # cut off .html
+        if tutorial[-5:] == '.html':
+            print("loading tutorial: ", tutorial)
+            tutorial_name = tutorial[:-5]
+            tutorial_pages[tutorial_name] = \
+                    open(join(tutorial_path, tutorial)).read()
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -27,9 +31,10 @@ def index():
 
 @app.route('/tutorial/<path:tutorial>', methods=['GET'])
 def tutorial(tutorial):
+    if app.config['DEBUG']:
+        load_tutorials()
     print("Rendering: ", tutorial)
     print("Pages: ", list(tutorial_pages.keys()))
-    print(app.config['STATIC_URL'])
     if tutorial in tutorial_pages:
         jsname = app.config['STATIC_URL'] +  '/js/' + tutorial + '.js'
         return render_template('tutorial.html',
@@ -46,4 +51,5 @@ def get_static_assets(filename):
     return send_from_directory('/static/', filename)
 
 if __name__ == '__main__':
+    load_tutorials()
     app.run()

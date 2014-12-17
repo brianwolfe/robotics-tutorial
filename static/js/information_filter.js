@@ -23,8 +23,6 @@ Handlebars.registerPartial('vector', $('#vector-partial').html());
 Handlebars.registerPartial('matrix', $('#matrix-partial').html());
 Handlebars.registerPartial('mat11', $('#mat11-partial').html());
 
-console.log(template);
-
 var contents = template({});
 d3.select("#twod").html(contents);
 

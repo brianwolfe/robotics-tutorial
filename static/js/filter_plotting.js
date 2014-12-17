@@ -341,14 +341,8 @@ filter_plotting = function() {
         var apply_force = function(x) {
           R = read_matrix(selection.select('.movementnoise'));
           Q = read_matrix(selection.select('.measurementnoise'));
-          console.log("R");
-          console.log(R);
-          console.log("Q");
-          console.log(Q);
 
           data = data.map(function(y) {
-            console.log("Applying force with noise:");
-            console.log(R);
             return {
               key: y.key,
               mu: matadd(fp.matmul(A, y.mu), fp.matmul(B, [[x]])),
@@ -387,16 +381,10 @@ filter_plotting = function() {
             }
             i ++;
           }
-          console.log("Reading matrix");
-          console.log(mat);
           return mat;
         }
 
         var read_matrices = function() {
-          console.log("R: ");
-          console.log(R);
-          console.log("Q: ");
-          console.log(Q);
         }
 
         // selection.selectAll('input').on('change', read_matrices);
@@ -430,15 +418,7 @@ filter_plotting = function() {
           var measurement = [[xscale.invert(scoord[0])]];
           R = read_matrix(selection.select('.movementnoise'));
           Q = read_matrix(selection.select('.measurementnoise'));
-          console.log(selection.select('.measurementnoise').html());
-          console.log("R");
-          console.log(R);
-          console.log("Q");
-          console.log(Q);
           data = data.map(function(x) {
-
-            console.log("Measuring with noise:");
-            console.log(Q);
             // K = sigma * C^T * (C sigma C^T + Q)^-1
             var K = fp.matmul(fp.matmul(x.sigma, transpose(C)),
                               fp.matinv2x2(matadd(fp.matmul(fp.matmul(C, x.sigma), transpose(C)), Q)));
@@ -472,6 +452,7 @@ filter_plotting = function() {
         ];
     return eigenvalues;
   }
+
   fp.matinv2x2 = function(mat) {
     if (mat.length == 1) {
         var inv = [[1.0 / mat[0][0]]];
@@ -486,12 +467,37 @@ filter_plotting = function() {
   }
 
   fp.eigvecs2x2 = function(mat) {
+    /* 
+     * There is something really wrong with this eigenvector
+     * calculation, I need to fix it.
+     **/
     var ev = fp.eigvals2x2(mat),
+      eigenvecs, i;
+
+    if (Math.abs(mat[0][1]) > 0) {
       eigenvecs = [
-            [mat[0][1] , mat[1][1] - ev[1]],
-            [mat[0][0] - ev[0], mat[1][0]],
-        ],
-        i;
+            [mat[0][1], ev[0] - mat[0][0]],
+            [mat[0][1], ev[1] - mat[0][0]]
+        ];
+    } else if (Math.abs(mat[1][0]) > 0) {
+      eigenvecs = [
+          [ev[0] - mat[1][1], ev[1][0]],
+          [ev[1] - mat[1][1], ev[1][0]]
+        ];
+    } else {
+      // Diagonal, so eigenvectors are identity, or rotated identity
+      if (Math.abs(mat[0][0] - ev[0]) < Math.abs(mat[0][0] - ev[1])) {
+        eigenvecs = [
+          [1, 0],
+          [0, 1]
+        ]
+      } else {
+        eigenvecs = [
+            [0, 1],
+            [1, 0]
+        ];
+      }
+    }
 
     for (i = 0; i < 2; i++) {
         var tmp = Math.sqrt(Math.pow(eigenvecs[i][0], 2)
@@ -527,7 +533,7 @@ filter_plotting = function() {
 
 
   /* Nonlinear comparison stuff */
-  fp.nonlinear_comparison = function() {
+  fp.init_nonlinear_comparison = function() {
     var xrange = [-20, 20],
       yrange = [-20, 20],
       chart = function(selection) {
@@ -590,7 +596,6 @@ filter_plotting = function() {
             .attr("transform", 
                  " rotate(90, " + (lax_pos) + ", " + midy + ") translate(" + (lax_pos) + "," + (midy) + ")")
             .html("<text> Robot Y Position </text>");
-        xAxis.classed('yaxis', true);
         /*
          * Try drawing lines from mean to boundary of ellipse at
          * the mean
@@ -655,17 +660,19 @@ filter_plotting = function() {
             .attr('y1', 0)
             .attr('x2', function(x) {
               var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
-                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]), 
+                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]);
                 return rx;
             })
             .attr('y2', function(x) {
               var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
-                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]), 
+                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]);
                 return ry;
             });
-        }
-      }
-      ;
+        };
+
+        display();
+      };
+      return chart;
   }
 
   return fp;
