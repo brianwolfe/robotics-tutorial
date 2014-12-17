@@ -1,15 +1,20 @@
 from flask import Flask, render_template, abort, jsonify, request
 from flask.ext.sqlalchemy import SQLAlchemy
 import os
-from os.path import join
+import os.path
+import sys
 from urllib.parse import urljoin
 import numpy as np
+
+cmd_folder = os.path.dirname(os.path.abspath(__file__))
+if cmd_folder not in sys.path:
+     sys.path.insert(0, cmd_folder)
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 db = SQLAlchemy(app)
 
-tutorial_path = 'tutorials'
+tutorial_path = os.path.join(cmd_folder, 'tutorials')
 tutorials = []
 tutorial_pages = {}
 
@@ -24,7 +29,7 @@ def load_tutorials():
             print("loading tutorial: ", tutorial)
             tutorial_name = tutorial[:-5]
             tutorial_pages[tutorial_name] = \
-                    open(join(tutorial_path, tutorial)).read()
+                    open(os.path.join(tutorial_path, tutorial)).read()
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
