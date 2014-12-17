@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urljoin
 
 class Config(object):
     DEBUG = False
@@ -21,11 +22,12 @@ class Config(object):
     UNDERSCORE_URL = '/'.join([BOWER_PREFIX, 'underscore', 'underscore.js'])
     NVD3_URL = '/'.join([BOWER_PREFIX, 'nvd3', 'nv.d3.js'])
     MATHJAX_URL = '/'.join([BOWER_PREFIX, 'MathJax', 'MathJax.js'])
-
     STATIC_URL = '/'.join(['/static'])
     APP_URL = '/'.join([STATIC_URL, 'js', 'app.js'])
+    FILTERPLOTTING_URL = '/'.join([STATIC_URL, 'js/filter_plotting.js'])
 
     APP_STYLESHEET_URL = '/'.join([STATIC_URL, 'stylesheets', 'app.css'])
+    NVD3_STYLESHEET_URL = '/'.join([STATIC_URL, 'stylesheets', 'nv.d3.css'])
 
 class ProductionConfig(Config):
     D3_URL = \
