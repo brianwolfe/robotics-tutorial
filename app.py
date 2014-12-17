@@ -37,10 +37,8 @@ def index():
 
 @app.route('/tutorial/<path:tutorial>', methods=['GET'])
 def tutorial(tutorial):
-    # if app.config['DEBUG']:
-    load_tutorials()
-    print("Rendering: ", tutorial)
-    print("Pages: ", list(tutorial_pages.keys()))
+    if app.config['DEBUG']:
+        load_tutorials()
     if tutorial in tutorial_pages:
         jsname = app.config['STATIC_URL'] +  '/js/' + tutorial + '.js'
         return render_template('tutorial.html',
@@ -103,7 +101,7 @@ def get_robot_update(filtertype='ukf'):
 
     return jsonify({"robots": new_positions})
 
+load_tutorials()
 
 if __name__ == '__main__':
-    load_tutorials()
     app.run()
