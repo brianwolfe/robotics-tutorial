@@ -591,9 +591,18 @@ filter_plotting = function() {
                  " rotate(90, " + (lax_pos) + ", " + midy + ") translate(" + (lax_pos) + "," + (midy) + ")")
             .html("<text> Robot Y Position </text>");
         xAxis.classed('yaxis', true);
+        /*
+         * Try drawing lines from mean to boundary of ellipse at
+         * the mean
+         *
+         * direction of line is phy = theta - rot
+         * length of line is the distance to the boundary of the ellipse
+         * in that direction....
+         * x^2 / rx^2 + y^2 / ry^2 = 1
+         * cos(theta)^2 / rx^2 + 
+         */
 
-
-        var mapsigma = function(sigma) {
+        var extract_mapsigma = function(sigma) {
           var xs = xscale(0),
             ys = yscale(0),
             ms = [[xscale(xscale(sigma[0][0]) - xs) - xs,
@@ -608,33 +617,52 @@ filter_plotting = function() {
           ellipses = svg.selectAll('.sigma')
             .data(data);
 
-          ellipses.enter()
-            .append('g').classed('sigma', true)
-              .append('ellipse')
+          var new_g = ellipses.enter()
+            .append('g').classed('sigma', true);
+
+          new_g.append('ellipse')
                 .classed('sigmaellipse', true)
+                .attr('style', 'stroke:' + fp.colorwheel[1]);
+          new_g.append('line')
+                .classed('mean_theta', true)
                 .attr('style', 'stroke:' + fp.colorwheel[1]);
 
           ellipses.transition(100)
             .attr("transform",
                   function (x) {
                     var tstr = "translate(" + xscale(x.mu[0]) + "," + yscale(x.mu[1]) + ") ";
-                    var ev = fp.eigvecs2x2(mapsigma(x.sigma));
+                    var ev = fp.eigvecs2x2(extract_mapsigma(x.sigma));
                     var rot = Math.atan2(ev[0][1], ev[0][0]) * 180/Math.PI;
                     var rstr = "rotate(" + rot + ") "
+                    x.rotation = rot;
                     return tstr + rstr;
                   });
+
           ellipses.select('ellipse').transition(100)
             .attr('cx', 0)
             .attr('cy', 0)
             .attr('rx', function(x) {
-              return Math.sqrt(fp.eigvals2x2(mapsigma(x.sigma))[0]);
+              return Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]);
             })
             .attr('ry', function(x) {
-              return Math.sqrt(fp.eigvals2x2(mapsigma(x.sigma))[1]);
+              return Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]);
             })
             .attr('style', function(x, i) {
               return 'stroke:' + fp.colorwheel[(i + 1) % fp.colorwheel.length];
+            });
+          ellipses.select('line').transition(100)
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', function(x) {
+              var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
+                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]), 
+                return rx;
             })
+            .attr('y2', function(x) {
+              var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
+                ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]), 
+                return ry;
+            });
         }
       }
       ;
