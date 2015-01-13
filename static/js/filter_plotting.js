@@ -408,7 +408,6 @@ filter_plotting = function() {
 
           indicator.attr('x1', xscale(x));
           indicator.attr('x2', xscale(x));
-
         });
 
         svg.on('click', function () {
@@ -433,7 +432,6 @@ filter_plotting = function() {
           });
           display();
         });
-
       }
 
     return chart;
@@ -444,8 +442,18 @@ filter_plotting = function() {
         b = mat[0][1],
         c = mat[1][0],
         d = mat[1][1],
-        offset = (a + d) / 2,
-        rec = Math.sqrt((a + d) * (a + d) - 4 * (a * d - b * c)) / 2,
+        offset, rec, eigenvalues;
+        diff = (a + d) * (a + d) - 4 * (a * d - b * c);
+        if (diff > 0)
+        {
+          offset = (a + d) / 2;
+          rec = Math.sqrt(diff) / 2;
+        }
+        else
+        {
+          offset = (a + d) / 2;
+          rec = 0;
+        }
         eigenvalues = [
             offset + rec,
             offset - rec
@@ -531,7 +539,6 @@ filter_plotting = function() {
     }
   }
 
-
   /* Nonlinear comparison stuff */
   fp.init_nonlinear_comparison = function() {
     var xrange = [-20, 20],
@@ -561,6 +568,7 @@ filter_plotting = function() {
           bax_pos = bloc + 50,
           midx = (rloc + lloc) / 2,
           midy = (bloc + tloc) / 2,
+          Q = [[1, 0], [0, 1]],
           xscale = d3.scale.linear()
             .domain(xrange)
             .range([lloc, rloc])
@@ -610,52 +618,69 @@ filter_plotting = function() {
          * cos(theta)^2 / rx^2 + 
          */
 
+        var c_xscale_inv = function(x) {
+          var xs = xscale.invert(0);
+          var ret =  xscale.invert(x) - xs;
+          return ret;
+        }
+        var c_yscale_inv = function(y) {
+          var ys = yscale.invert(0);
+          return -(yscale.invert(y) - ys);
+        }
+        var c_xscale = function(x) {
+          var xs = xscale(0);
+          return xscale(x) - xs
+        };
+        var c_yscale = function(y) {
+          var ys = yscale(0);
+          return -(yscale(y) - ys);
+        };
         var extract_mapsigma = function(sigma) {
           var xs = xscale(0),
             ys = yscale(0),
-            ms = [[xscale(xscale(sigma[0][0]) - xs) - xs,
-                   yscale(xscale(sigma[0][1]) - xs) - ys],
-                  [yscale(xscale(sigma[0][1]) - xs) - ys,
-                   yscale(yscale(sigma[1][1]) - ys) - ys]];
+            ms = [[c_xscale(c_xscale(sigma[0][0])),
+                   c_yscale(c_xscale(sigma[0][1]))],
+                  [c_xscale(c_yscale(sigma[1][0])),
+                   c_yscale(c_yscale(sigma[1][1]))]];
           return ms;
 
         }
 
         var display = function() {
-          ellipses = svg.selectAll('.sigma')
+          robots = svg.selectAll('.sigma')
             .data(data);
 
-          var new_g = ellipses.enter()
+          var new_g = robots.enter()
             .append('g').classed('sigma', true);
 
-          new_g.append('ellipse')
-                .classed('sigmaellipse', true)
-                .attr('style', 'stroke:' + fp.colorwheel[1]);
+          new_g.append('line')
+                .classed('plussigma', true)
+                .classed('sigmaline', true)
+                .attr('style', 'stroke:' + fp.colorwheel[0]);
+          new_g.append('line')
+                .classed('minussigma', true)
+                .classed('sigmaline', true)
+                .attr('style', 'stroke:' + fp.colorwheel[0]);
           new_g.append('line')
                 .classed('mean_theta', true)
                 .classed('sigmaline', true)
                 .attr('style', 'stroke:' + fp.colorwheel[1]);
-          new_g.append('line')
-                .classed('plussigma', true)
-                .classed('sigmaline', true)
-                .attr('style', 'stroke:' + fp.colorwheel[1]);
-          new_g.append('line')
-                .classed('minussigma', true)
-                .classed('sigmaline', true)
+          new_g.append('ellipse')
+                .classed('sigmaellipse', true)
                 .attr('style', 'stroke:' + fp.colorwheel[1]);
 
-          ellipses.transition(100)
+          robots.transition(100)
             .attr("transform",
                   function (x) {
                     var tstr = "translate(" + xscale(x.mu[0]) + "," + yscale(x.mu[1]) + ") ";
                     var ev = fp.eigvecs2x2(extract_mapsigma(x.sigma));
                     var rot = Math.atan2(ev[0][1], ev[0][0]) * 180/Math.PI;
                     var rstr = "rotate(" + rot + ") "
-                    x.rotation = rot;
+                    x.rotation = rot * Math.PI / 180;
                     return tstr + rstr;
                   });
 
-          ellipses.select('ellipse').transition(100)
+          robots.select('ellipse').transition(100)
             .attr('cx', 0)
             .attr('cy', 0)
             .attr('rx', function(x) {
@@ -667,60 +692,168 @@ filter_plotting = function() {
             .attr('style', function(x, i) {
               return 'stroke:' + fp.colorwheel[(i + 1) % fp.colorwheel.length];
             });
-          // ellipses.select('.plussigma').transition(100)
-          //   .attr('x1', 0)
-          //   .attr('y1', 0)
-          //   .attr('x2', function(x) {
-          //     var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
-          //       phi = x.mu[2] + Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
-          //       phix = Math.cos(phi) * rx;
-          //       return phix;
-          //   })
-          //   .attr('y2', function(x) {
-          //     var ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]),
-          //       phi = x.mu[2] + Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
-          //       phiy = Math.sin(phi) * ry;
-          //       return phiy;
-          //   });
-          // ellipses.select('.minussigma').transition(100)
-          //   .attr('x1', 0)
-          //   .attr('y1', 0)
-          //   .attr('x2', function(x) {
-          //     var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
-          //       phi = x.mu[2] - Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
-          //       phix = Math.cos(phi) * rx;
-          //       return phix;
-          //   })
-          //   .attr('y2', function(x) {
-          //     var ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]),
-          //       phi = x.mu[2] - Math.sqrt(x.sigma[2][2]) - (x.rotation * Math.PI / 180),
-          //       phiy = Math.sin(phi) * ry;
-          //       return phiy;
-          //   });
-          var map_theta = function(theta) {
-            return -theta;
+
+          var get_phi = function(x, start_phi) {
+            /*
+             * Map to raw (true) rotation
+             */
+            var mapped_rot = x.rotation,
+              raw_cos = c_xscale_inv(Math.cos(mapped_rot)),
+              raw_sin = c_yscale_inv(Math.sin(mapped_rot)),
+              raw_rot = Math.atan2(raw_sin, raw_cos),
+            /*
+             * Add the desired angle and map back to displayed rotation
+             */
+              x = c_xscale(Math.cos(-start_phi - raw_rot)),
+              y = c_yscale(Math.sin(-start_phi - raw_rot)),
+              phi = Math.atan2(y, x);
+              return phi;
           }
-          ellipses.select('.mean_theta').transition(100)
+          var get_radii = function(x) {
+            var ev1 = fp.eigvals2x2(extract_mapsigma(x.sigma)),
+              rx = Math.sqrt(ev1[0]),
+              ry = Math.sqrt(ev1[1]);
+            return [rx, ry];
+          }
+          robots.select('.minussigma').transition(100)
             .attr('x1', 0)
             .attr('y1', 0)
             .attr('x2', function(x) {
-              var rx = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[0]),
-                phi = map_theta(x.mu[2] - (x.rotation * Math.PI / 180)),
-                phix = Math.cos(phi) * rx;
-                console.log(phi);
-                return phix;
+              var phi = get_phi(x, x.mu[2][0] - Math.sqrt(x.sigma[2][2])),
+                rx = get_radii(x)[0],
+                phix = rx * Math.cos(phi);
+              return phix;
             })
             .attr('y2', function(x) {
-              var ry = Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]),
-                phi = map_theta(x.mu[2] - (x.rotation * Math.PI / 180)),
-                phiy = Math.sin(phi) * ry;
-                return phiy;
+              var phi = get_phi(x, x.mu[2][0] - Math.sqrt(x.sigma[2][2])),
+                ry = get_radii(x)[1],
+                phiy = ry * Math.sin(phi);
+              return phiy;
             });
-
+          robots.select('.plussigma').transition(100)
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', function(x) {
+              var phi = get_phi(x, x.mu[2][0] + Math.sqrt(x.sigma[2][2])),
+                rx = get_radii(x)[0],
+                phix = rx * Math.cos(phi);
+              return phix;
+            })
+            .attr('y2', function(x) {
+              var phi = get_phi(x, x.mu[2][0] + Math.sqrt(x.sigma[2][2])),
+                ry = get_radii(x)[1],
+                phiy = ry * Math.sin(phi);
+              return phiy;
+            });
+          robots.select('.mean_theta').transition(100)
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', function(x) {
+              var phi = get_phi(x, x.mu[2][0]),
+                rx = get_radii(x)[0],
+                phix = rx * Math.cos(phi);
+              return phix;
+            })
+            .attr('y2', function(x) {
+              var phi = get_phi(x, x.mu[2][0]);
+                ry = get_radii(x)[1],
+                phiy = ry * Math.sin(phi);
+              return phiy;
+            });
         };
 
         display();
 
+        svg.on('mousemove', function() {
+          var scoord = d3.mouse(this);
+          var x = xscale.invert(scoord[0]),
+            y = yscale.invert(scoord[1]),
+            xindicator = svg.selectAll('.xindicator')
+              .data([x]),
+            yindicator = svg.selectAll('.yindicator')
+              .data([y]);
+          x = Math.min(xrange[1], Math.max(xrange[0], x));
+          y = Math.min(yrange[1], Math.max(yrange[0], y));
+
+          xindicator.enter()
+            .append('line')
+            .classed('indicator', true)
+            .classed('xindicator', true)
+            .attr('y1', bloc)
+            .attr('y2', tloc);
+
+          yindicator.enter()
+            .append('line')
+            .classed('indicator', true)
+            .classed('yindicator', true)
+            .attr('x1', lloc)
+            .attr('x2', rloc);
+
+          xindicator.attr('x1', xscale(x));
+          xindicator.attr('x2', xscale(x));
+          yindicator.attr('y1', yscale(y));
+          yindicator.attr('y2', yscale(y));
+
+          ellipses = svg.selectAll('.Qellipse')
+            .data([{'x': x, 
+                    'y': y, 
+                    'sigma': Q
+            }]);
+          
+          ellipses.enter()
+            .append('g').classed('Qellipse', true)
+              .append('ellipse')
+                .classed('sigmaellipse', true)
+                .classed('Qellipse', true);
+
+          ellipses.attr("transform", function (x) {
+              var tstr = "translate(" + xscale(x.x) + "," + yscale(x.y) + ") ",
+                ev = fp.eigvecs2x2(extract_mapsigma(x.sigma)),
+                rot = Math.atan2(ev[0][1], ev[0][0]) * 180/Math.PI,
+                rstr = "rotate(" + rot + ") ";
+              return tstr + rstr;
+            });
+
+          ellipses.select('ellipse')
+            .attr('cx', 0)
+            .attr('cy', 0)
+            .attr('rx', function(x) {
+              return Math.sqrt(fp.eigvals2x2(extract_mapsigma(Q))[0]);
+            })
+            .attr('ry', function(x) {
+              return Math.sqrt(fp.eigvals2x2(extract_mapsigma(Q))[1]);
+            });
+        });
+
+        svg.on('click', function() {
+          var scoord = d3.mouse(this);
+          var x = xscale.invert(scoord[0]),
+            y = yscale.invert(scoord[1]),
+            xindicator = svg.selectAll('.xindicator')
+              .data([x]),
+            yindicator = svg.selectAll('.yindicator')
+              .data([y]);
+          x = Math.min(xrange[1], Math.max(xrange[0], x));
+          y = Math.min(yrange[1], Math.max(yrange[0], y));
+
+          var alldata = {
+            robots: data,
+            Q: Q,
+            x: x,
+            y: y
+          };
+          
+          d3.json("/measurementupdate/ukf")
+            .header("Content-Type", "application/json")
+            .post(JSON.stringify(alldata), function(error, curdata) {
+              if (error) {
+                return;
+              }
+              data = curdata.robots;
+              console.log(data)
+              display();
+            });
+        });
 
         var movement_update = function(leftm, rightm) {
           var alldata = {
@@ -729,17 +862,14 @@ filter_plotting = function() {
             rightwheel: rightm
           }
 
-          d3.json("/robotupdate/ukf")
+          d3.json("/movementupdate/ukf")
             .header("Content-Type", "application/json")
             .post(JSON.stringify(alldata), function(error, curdata) {
               if (error) {
                 return;
               }
-              console.log(data);
               data = curdata.robots;
-              console.log(data);
               display();
-              
             });
         }
 
