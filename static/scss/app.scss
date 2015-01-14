@@ -65,6 +65,7 @@ svg {
 
 .sigmaline {
     stroke-width: 2px;
+    stroke-linecap: round;
 }
 
 .sigmaline.mean_theta {
@@ -73,7 +74,8 @@ svg {
 
 .sigmaellipse {
     fill:none;
-    stroke-width: 2px;
+    stroke-width: 3px;
+    stroke: #000000;
 }
 
 .graphcontainer {

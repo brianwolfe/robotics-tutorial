@@ -9088,6 +9088,7 @@ svg {
 /* line 66, ../scss/app.scss */
 .sigmaline {
   stroke-width: 2px;
+  stroke-linecap: round;
 }
 
 /* line 70, ../scss/app.scss */
@@ -9098,7 +9099,8 @@ svg {
 /* line 74, ../scss/app.scss */
 .sigmaellipse {
   fill: none;
-  stroke-width: 2px;
+  stroke-width: 3px;
+  stroke: #000000;
 }
 
 /* line 79, ../scss/app.scss */
