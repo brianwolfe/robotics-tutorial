@@ -544,8 +544,8 @@ filter_plotting = function() {
     var xrange = [-20, 20],
       yrange = [-20, 20],
       chart = function(selection) {
-        var data = selection.datum(),
-          original_data = data,
+        var robot_data = selection.datum(),
+          original_data = robot_data,
           svg = selection.select('svg');
         selection.classed("graphcontainer", true);
         selection.classed("square", true);
@@ -569,6 +569,7 @@ filter_plotting = function() {
           midx = (rloc + lloc) / 2,
           midy = (bloc + tloc) / 2,
           Q = [[1, 0], [0, 1]],
+          R = [[0.7, 0, 0], [0, 0.7, 0], [0, 0, 0.02]],
           xscale = d3.scale.linear()
             .domain(xrange)
             .range([lloc, rloc])
@@ -648,7 +649,7 @@ filter_plotting = function() {
 
         var display = function() {
           robots = svg.selectAll('.sigma')
-            .data(data);
+            .data(robot_data);
 
           var new_g = robots.enter()
             .append('g').classed('sigma', true);
@@ -837,7 +838,7 @@ filter_plotting = function() {
           y = Math.min(yrange[1], Math.max(yrange[0], y));
 
           var alldata = {
-            robots: data,
+            robots: robot_data,
             Q: Q,
             x: x,
             y: y
@@ -849,17 +850,18 @@ filter_plotting = function() {
               if (error) {
                 return;
               }
-              data = curdata.robots;
-              console.log(data)
+              robot_data = curdata.robots;
+              console.log(robot_data)
               display();
             });
         });
 
         var movement_update = function(leftm, rightm) {
           var alldata = {
-            robots: data,
+            robots: robot_data,
             leftwheel: leftm,
-            rightwheel: rightm
+            rightwheel: rightm,
+            R: R
           }
 
           d3.json("/movementupdate/ukf")
@@ -868,7 +870,7 @@ filter_plotting = function() {
               if (error) {
                 return;
               }
-              data = curdata.robots;
+              robot_data = curdata.robots;
               display();
             });
         }
