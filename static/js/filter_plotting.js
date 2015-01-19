@@ -568,7 +568,7 @@ filter_plotting = function() {
           bax_pos = bloc + 50,
           midx = (rloc + lloc) / 2,
           midy = (bloc + tloc) / 2,
-          Q = [[1, 0], [0, 1]],
+          Q = [[9, 0], [0, 9]],
           R = [[0.7, 0, 0], [0, 0.7, 0], [0, 0, 0.02]],
           xscale = d3.scale.linear()
             .domain(xrange)
