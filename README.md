@@ -13,4 +13,5 @@ types of processes:
 
 * Extended Kalman Filter
 * Unscented Kalman Filter
-
+* Histogram Filter
+* Particle Filter
