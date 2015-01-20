@@ -78,6 +78,15 @@ svg {
     stroke: #000000;
 }
 
+.particle circle {
+    stroke-width: 0px;
+    background-color: #000000;
+}
+
+.particle {
+    opacity: 0.5;
+}
+
 .graphcontainer {
     background-color: #FAFAFA;
     // display: block;

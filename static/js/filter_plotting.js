@@ -569,7 +569,8 @@ filter_plotting = function() {
           midx = (rloc + lloc) / 2,
           midy = (bloc + tloc) / 2,
           Q = [[9, 0], [0, 9]],
-          R = [[0.7, 0, 0], [0, 0.7, 0], [0, 0, 0.02]],
+          R = [[0.2, 0, 0], [0, 0.2, 0], [0, 0, 0.01]],
+          n_particles = 300,
           xscale = d3.scale.linear()
             .domain(xrange)
             .range([lloc, rloc])
@@ -608,16 +609,6 @@ filter_plotting = function() {
             .attr("transform", 
                  " rotate(90, " + (lax_pos) + ", " + midy + ") translate(" + (lax_pos) + "," + (midy) + ")")
             .html("<text> Robot Y Position </text>");
-        /*
-         * Try drawing lines from mean to boundary of ellipse at
-         * the mean
-         *
-         * direction of line is phy = theta - rot
-         * length of line is the distance to the boundary of the ellipse
-         * in that direction....
-         * x^2 / rx^2 + y^2 / ry^2 = 1
-         * cos(theta)^2 / rx^2 + 
-         */
 
         var c_xscale_inv = function(x) {
           var xs = xscale.invert(0);
@@ -644,31 +635,34 @@ filter_plotting = function() {
                   [c_xscale(c_yscale(sigma[1][0])),
                    c_yscale(c_yscale(sigma[1][1]))]];
           return ms;
-
         }
 
-        var display = function() {
-          robots = svg.selectAll('.sigma')
-            .data(robot_data);
+        var display_kf = function(robot, i) {
+          robots = svg.selectAll('.' + robot['key'] + '.sigma')
+            .data([robot]);
 
           var new_g = robots.enter()
-            .append('g').classed('sigma', true);
+              .append('g')
+              .classed('sigma', true)
+              .classed(robot['key'], true),
+            main_color = fp.colorwheel[(2*i + 1) % fp.colorwheel.length],
+            subcolor = fp.colorwheel[(2*i) % fp.colorwheel.length];
 
           new_g.append('line')
                 .classed('plussigma', true)
                 .classed('sigmaline', true)
-                .attr('style', 'stroke:' + fp.colorwheel[0]);
+                .attr('style', 'stroke:' + subcolor);
           new_g.append('line')
                 .classed('minussigma', true)
                 .classed('sigmaline', true)
-                .attr('style', 'stroke:' + fp.colorwheel[0]);
+                .attr('style', 'stroke:' + subcolor);
           new_g.append('line')
                 .classed('mean_theta', true)
                 .classed('sigmaline', true)
-                .attr('style', 'stroke:' + fp.colorwheel[1]);
+                .attr('style', 'stroke:' + main_color);
           new_g.append('ellipse')
                 .classed('sigmaellipse', true)
-                .attr('style', 'stroke:' + fp.colorwheel[1]);
+                .attr('style', 'stroke:' + main_color);
 
           robots.transition(100)
             .attr("transform",
@@ -689,9 +683,6 @@ filter_plotting = function() {
             })
             .attr('ry', function(x) {
               return Math.sqrt(fp.eigvals2x2(extract_mapsigma(x.sigma))[1]);
-            })
-            .attr('style', function(x, i) {
-              return 'stroke:' + fp.colorwheel[(i + 1) % fp.colorwheel.length];
             });
 
           var get_phi = function(x, start_phi) {
@@ -762,6 +753,92 @@ filter_plotting = function() {
               return phiy;
             });
         };
+
+        var sample_particles = function(robot, i) {
+          var all_data = {
+            sigma: robot['sigma'],
+            mu: robot['mu'],
+            N: n_particles,
+          }
+          d3.json("/sample_particles")
+            .header("Content-Type", "application/json")
+            .post(JSON.stringify(all_data), function(error, curdata) {
+              if (error) {
+                return;
+              }
+              robot['particles'] = curdata['particles'];
+              display_particle(robot, i);
+            });
+        }
+
+        var display_particle = function(robot, i) {
+          if (!('particles' in robot)) {
+            sample_particles(robot, i);
+            return;
+          }
+
+          var particles = svg.selectAll('.' + robot['key'] + '.particles')
+              .data([robot]),
+            main_color = fp.colorwheel[(2*i + 1) % fp.colorwheel.length],
+            subcolor = fp.colorwheel[(2*i) % fp.colorwheel.length];
+
+          var new_g = particles.enter()
+              .append('g')
+              .classed('particles', true)
+              .classed(robot['key'], true);
+
+
+          var particlegroup = particles.selectAll('circle.particle')
+            .data(robot['particles']);
+
+          var particleheading = particles.selectAll('line.particle')
+            .data(robot['particles']);
+
+          particlegroup.enter()
+            .append('circle')
+            .classed('particle', true)
+            .attr('cx', function(p) {return xscale(p[0]);})
+            .attr('cy', function(p) {return yscale(p[1]);})
+            .attr('r', 2)
+            .attr('fill', main_color);
+          
+          particlegroup.transition(100)
+            .attr('cx', function(p) {return xscale(p[0]);})
+            .attr('cy', function(p) {return yscale(p[1]);});
+
+          var heading_calc = function(heading) {
+            var x = Math.cos(heading);
+            var y = Math.sin(heading);
+          }
+          particleheading.enter()
+            .append('line')
+            .classed('particle', true)
+            .attr('stroke', main_color)
+            .attr('x1', function(p) {return xscale(p[0]);})
+            .attr('y1', function(p) {return yscale(p[1]);})
+            .attr('x2', function(p) {return xscale(p[0] + 0.5 * Math.cos(p[2]));})
+            .attr('y2', function(p) {return yscale(p[1] + 0.5 * Math.sin(p[2]));});
+          particleheading.transition(100)
+            .attr('x1', function(p) {return xscale(p[0]);})
+            .attr('y1', function(p) {return yscale(p[1]);})
+            .attr('x2', function(p) {return xscale(p[0] + 0.5*Math.cos(p[2]));})
+            .attr('y2', function(p) {return yscale(p[1] + 0.5*Math.sin(p[2]));});
+
+        }
+
+        var display = function() {
+          robot_data.map(function(robot, i) {
+            if (robot['type'] == 'ukf' || robot['type'] == 'ekf') {
+              display_kf(robot, i);
+            } else if (robot['type'] == 'particle') {
+              display_particle(robot, i);
+              if ('sigma' in robot) {
+                display_kf(robot, i);
+              }
+            }
+          });
+        }
+
 
         display();
 
@@ -887,8 +964,6 @@ filter_plotting = function() {
             movement_update(leftm, rightm);
             display();
           });
-
-
       };
       return chart;
   }

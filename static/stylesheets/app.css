@@ -9091,19 +9091,30 @@ svg {
   stroke-linecap: round;
 }
 
-/* line 70, ../scss/app.scss */
+/* line 71, ../scss/app.scss */
 .sigmaline.mean_theta {
   stroke-width: 3px;
 }
 
-/* line 74, ../scss/app.scss */
+/* line 75, ../scss/app.scss */
 .sigmaellipse {
   fill: none;
   stroke-width: 3px;
   stroke: #000000;
 }
 
-/* line 79, ../scss/app.scss */
+/* line 81, ../scss/app.scss */
+.particle circle {
+  stroke-width: 0px;
+  background-color: #000000;
+}
+
+/* line 86, ../scss/app.scss */
+.particle {
+  opacity: 0.5;
+}
+
+/* line 90, ../scss/app.scss */
 .graphcontainer {
   background-color: #FAFAFA;
   width: 720px;
@@ -9113,13 +9124,13 @@ svg {
   margin-right: auto;
 }
 
-/* line 90, ../scss/app.scss */
+/* line 101, ../scss/app.scss */
 .graphcontainer.square {
   width: 500px;
   height: 500px;
 }
 
-/* line 95, ../scss/app.scss */
+/* line 106, ../scss/app.scss */
 .indicator {
   stroke-width: 2px;
   stroke: black;
