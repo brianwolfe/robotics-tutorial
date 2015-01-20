@@ -541,8 +541,8 @@ filter_plotting = function() {
 
   /* Nonlinear comparison stuff */
   fp.init_nonlinear_comparison = function() {
-    var xrange = [-20, 20],
-      yrange = [-20, 20],
+    var xrange = [-40, 40],
+      yrange = [-40, 40],
       chart = function(selection) {
         var robot_data = selection.datum(),
           original_data = robot_data,
