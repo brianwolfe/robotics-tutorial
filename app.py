@@ -4,11 +4,11 @@ import os
 import os.path
 import sys
 # from urllib.parse import urljoin
-from numpy import (array, concatenate, cos, diag, exp, float64, sin,
-                   zeros)
+from numpy import (array, concatenate, cos, cov, diag, exp, float64, mean,
+                   sin, zeros)
 from numpy.linalg import cholesky, inv
 
-from numpy.random import multivariate_normal
+from numpy.random import multivariate_normal, choice
 
 cmd_folder = os.path.dirname(os.path.abspath(__file__))
 if cmd_folder not in sys.path:
@@ -68,7 +68,6 @@ UKF_WEIGHT_ALPHA = 1.0
 UKF_WEIGHT_BETA = 2.0
 UKF_WEIGHT_KAPPA = 1.0
 
-
 def ukf_measurement(x, y, Q, robot):
     # Previous mean
     mu = array(robot['mu']).reshape((-1,))
@@ -104,14 +103,16 @@ def ukf_measurement(x, y, Q, robot):
     sigmapoints_new, wm, wc = ukf_get_sigmapoints(mu_new, sigma_new)
 
     robot = {
+        'key': robot['key'],
+        'type': 'ukf',
         'mu': mu_new.reshape((-1, 1)).tolist(),
         'sigma': sigma_new.tolist(),
-        'type': 'ukf',
         'previous_sigmapoints': sigmapoints.tolist(),
-        'current_sigmapoints': sigmapoints_new.tolist()
+        'current_sigmapoints': sigmapoints_new.tolist(),
         }
 
     return robot
+
 
 def histogram_measurement(x, y, Q, robot):
     if 'hist' not in robot or 'x' not in robot or 'y' not in robot or \
@@ -133,10 +134,11 @@ def histogram_measurement(x, y, Q, robot):
     for i, xm in enumerate(xbins):
         for j, ym in enumerate(ybins):
             mu = array((xm, ym))
-            hist[i, j, k] *= exp(-(z - mu).dot(Qinv).dot(z - mu)/2)
+            hist[i, j, :] *= exp(-(z - mu).dot(Qinv).dot(z - mu)/2)
     hist /= sum(sum(sum(hist)))
 
     return {
+        'key': robot['key'],
         'type': 'hist',
         'x': xbins,
         'y': ybins,
@@ -144,11 +146,38 @@ def histogram_measurement(x, y, Q, robot):
         'hist': hist.tolist()
         }
 
+
 def particle_measurement(x, y, Q, robot):
     if 'particles' not in robot:
         abort(404)
 
-    hist = array(robot['hist'])
+    particles = array(robot['particles'], dtype=float64, ndmin=2)
+    n_particles = particles.shape[0]
+
+    means = particles[:, :2]
+    readings = array([x, y], dtype=float64, ndmin=1)
+
+    inv_Q = inv(Q)
+
+    reading_diff = readings - means
+
+    p_z_xy = array([exp(-(rd).dot(inv_Q).dot(rd.T)/2) for rd in reading_diff])
+
+    p_z_xy /= sum(p_z_xy)
+
+    resampled = choice(list(range(n_particles)), size=n_particles,
+                       replace=True, p=p_z_xy)
+
+    particles = particles[resampled]
+
+    return {
+        'key': robot['key'],
+        'type': 'particle',
+        'particles': particles.tolist(),
+        'mu': mean(particles, 0).reshape((-1, 1)).tolist(),
+        'sigma': cov(particles, rowvar=0).tolist()
+        }
+
 
 @app.route('/measurementupdate/<path:filtertype>', methods=['POST'])
 def measurement_update_request(filtertype='ukf'):
@@ -211,12 +240,12 @@ def ukf_get_sigmapoints(mu, sigma):
 
 def ukf_movement(left_wheel, right_wheel, R, robot):
     mean = array(robot['mu'], dtype=float64)
-    cov = array(robot['sigma'], dtype=float64)
+    covariance = array(robot['sigma'], dtype=float64)
 
     dd = (left_wheel + right_wheel) / 2
     dt = (right_wheel - left_wheel) / ROBOT_RADIUS
 
-    xi, wm, wc = ukf_get_sigmapoints(mean, cov)
+    xi, wm, wc = ukf_get_sigmapoints(mean, covariance)
 
     wc_diag = diag(wc)
 
@@ -233,9 +262,15 @@ def ukf_movement(left_wheel, right_wheel, R, robot):
     mu_new = wm.dot(xi_new)
     sigma_new = (xi_new - mu_new).T.dot(wc_diag).dot(xi_new - mu_new) + R
 
-    return {'mu': mu_new.reshape((-1, 1)).tolist(),
-            'sigma': sigma_new.tolist(),
-            'type': 'ukf'}
+    print("UKF Covariance:")
+    print(sigma_new)
+
+    return {
+        'key': robot['key'],
+        'mu': mu_new.reshape((-1, 1)).tolist(),
+        'sigma': sigma_new.tolist(),
+        'type': 'ukf'
+        }
 
 
 def histogram_movement(leftwheel, rightwheel, R, robot):
@@ -276,6 +311,7 @@ def histogram_movement(leftwheel, rightwheel, R, robot):
     # Equally spaced, so all bins are equal
     newhist /= sum(sum(sum(newhist)))
     return {
+        'key': robot['key'],
         'type': 'hist',
         'x': xbins,
         'y': ybins,
@@ -283,8 +319,9 @@ def histogram_movement(leftwheel, rightwheel, R, robot):
         'hist': newhist.tolist()
         }
 
+
 def particle_movement(leftwheel, rightwheel, R, robot):
-    if not 'particles' in robot:
+    if 'particles' not in robot:
         abort(404)
 
     particles = array(robot['particles'])
@@ -294,7 +331,7 @@ def particle_movement(leftwheel, rightwheel, R, robot):
 
     z = zeros((len(particles[0]),))
 
-    noises = multivariate_normal(z, R)
+    noises = multivariate_normal(z, R, particles.shape[0])
 
     new_particles = zeros(particles.shape)
     for i, (particle, noise) in enumerate(zip(particles, noises)):
@@ -303,14 +340,18 @@ def particle_movement(leftwheel, rightwheel, R, robot):
         h = particle[2]
         new_particles[i] = array([
             x + dd*cos(h),
-            y + dd*cos(h),
+            y + dd*sin(h),
             h + dh
-            ]) + noises
+            ]) + noise
 
     return {
-            'type': 'particle',
-            'particles': new_particles.tolist()
-            }
+        'key': robot['key'],
+        'type': 'particle',
+        'particles': new_particles.tolist(),
+        'mu': mean(new_particles, 0).reshape((-1, 1)).tolist(),
+        'sigma': cov(new_particles, rowvar=0).tolist()
+        }
+
 
 # TODO split the robots out into different modules
 # staying here for now
@@ -341,6 +382,25 @@ def movement_update_request(filtertype='ukf'):
                     leftwheel, rightwheel, R, robot))
 
     return jsonify({"robots": new_positions})
+
+
+@app.route('/sample_particles', methods=['POST'])
+def sample_particles_request():
+    data = request.get_json()
+
+    if not data or 'sigma' not in data or \
+            'mu' not in data or 'N' not in data:
+        abort(404)
+
+    sigma = array(data['sigma'], dtype=float64, ndmin=2)
+    mu = array(data['mu'], dtype=float64, ndmin=1).reshape((-1,))
+    N = int(data['N'])
+
+    particles = multivariate_normal(mu, sigma, N)
+
+    return jsonify({
+        'particles': particles.tolist()
+        })
 
 load_tutorials()
 
