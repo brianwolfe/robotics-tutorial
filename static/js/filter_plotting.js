@@ -816,13 +816,13 @@ filter_plotting = function() {
             .attr('stroke', main_color)
             .attr('x1', function(p) {return xscale(p[0]);})
             .attr('y1', function(p) {return yscale(p[1]);})
-            .attr('x2', function(p) {return xscale(p[0] + 0.5 * Math.cos(p[2]));})
-            .attr('y2', function(p) {return yscale(p[1] + 0.5 * Math.sin(p[2]));});
+            .attr('x2', function(p) {return xscale(p[0] + Math.cos(p[2]));})
+            .attr('y2', function(p) {return yscale(p[1] + Math.sin(p[2]));});
           particleheading.transition(100)
             .attr('x1', function(p) {return xscale(p[0]);})
             .attr('y1', function(p) {return yscale(p[1]);})
-            .attr('x2', function(p) {return xscale(p[0] + 0.5*Math.cos(p[2]));})
-            .attr('y2', function(p) {return yscale(p[1] + 0.5*Math.sin(p[2]));});
+            .attr('x2', function(p) {return xscale(p[0] + Math.cos(p[2]));})
+            .attr('y2', function(p) {return yscale(p[1] + Math.sin(p[2]));});
 
         }
 
