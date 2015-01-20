@@ -61,8 +61,6 @@ def tutorial(tutorial):
 # @app.route('/static/<path:filename>')
 # def get_static_assets(filename):
 #     return send_from_directory('/static/', filename)
-
-
 ROBOT_RADIUS = 1
 UKF_WEIGHT_ALPHA = 1.0
 UKF_WEIGHT_BETA = 2.0
